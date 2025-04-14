@@ -16,7 +16,8 @@ struct Debt : Identifiable, Codable {
     var date : Date
     var isPaid : Bool
     
-    init(name: String,
+    init(id: UUID = UUID(),
+         name: String,
          borrower: String,
          amount: Double,
          tag: String? = nil,
@@ -24,7 +25,7 @@ struct Debt : Identifiable, Codable {
          date: Date = Date(),
          isPaid: Bool = false)
     {
-        self.id = UUID()
+        self.id = id
         self.name = name
         self.borrower = borrower
         self.amount = amount

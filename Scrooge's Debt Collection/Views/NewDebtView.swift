@@ -11,6 +11,7 @@ struct NewDebtView : View {
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject var viewModel : DebtViewModel
+    private var editingDebt : Debt?
     
     @State private var name = ""
     @State private var borrower = ""
@@ -20,6 +21,11 @@ struct NewDebtView : View {
     @State private var description = ""
     @State private var date = Date()
     @State private var isPaid : Bool = false
+    
+    init(viewModel: DebtViewModel, editingDebt: Debt? = nil) {
+        self.viewModel = viewModel
+        self.editingDebt = editingDebt
+    }
     
     var body : some View {
         NavigationView {
@@ -53,7 +59,7 @@ struct NewDebtView : View {
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
             }
-            .navigationTitle(Text("New Debt"))
+            .navigationTitle(Text(editingDebt == nil ? "New Debt" : "Edit Debt"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -61,23 +67,37 @@ struct NewDebtView : View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        if let doubleAmount = Double(amount) {
-                            let newDebt = Debt(
-                                name: name,
-                                borrower: borrower,
-                                amount: doubleAmount,
-                                tag: tag.isEmpty ? nil : tag,
-                                description: description.isEmpty ? nil : description,
-                                date: date,
-                                isPaid: isPaid
-                            )
-                            viewModel.addDebt(newDebt)
-                            dismiss()
-                        } else {
+                    Button(editingDebt == nil ? "Add" : "Save") {
+                        guard let doubleAmount = Double(amount) else {
                             isAmountValid = false
+                            return
                         }
+                        let newDebt = Debt(
+                            id: editingDebt?.id ?? UUID(),
+                            name: name,
+                            borrower: borrower,
+                            amount: doubleAmount,
+                            tag: tag.isEmpty ? nil : tag,
+                            description: description.isEmpty ? nil : description,
+                            date: date,
+                            isPaid: isPaid
+                        )
+                        if let oldDebt = editingDebt {
+                            viewModel.removeDebt(oldDebt)
+                        }
+                        viewModel.addDebt(newDebt)
+                        dismiss()
                     }.disabled(name.isEmpty || borrower.isEmpty || amount.isEmpty)
+                }
+            }.onAppear {
+                if let debt = editingDebt {
+                    name = debt.name
+                    borrower = debt.borrower
+                    amount = String(format: "%.2f", debt.amount)
+                    tag = debt.tag ?? ""
+                    description = debt.description ?? ""
+                    date = debt.date
+                    isPaid = debt.isPaid
                 }
             }
         }

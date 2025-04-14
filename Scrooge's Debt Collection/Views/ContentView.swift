@@ -7,9 +7,16 @@
 
 import SwiftUI
 
+extension Debt : Equatable {
+    static func ==(lhs: Debt, rhs: Debt) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = DebtViewModel()
     @State private var showingAddDebt = false
+    @State private var editDebt: Debt? = nil
     
     var body : some View {
         NavigationView {
@@ -32,8 +39,11 @@ struct ContentView: View {
                             Text(description)
                                 .font(.caption2)
                         }
-                    }
-                }
+                    }.contentShape(Rectangle())
+                        .onTapGesture {
+                            editDebt = debt
+                        }
+                }.onDelete(perform: deleteDebt)
             }
             .navigationBarTitle("Scrooge's Debts")
             .toolbar {
@@ -43,9 +53,18 @@ struct ContentView: View {
                     Image(systemName: "plus")
                 }
             }
+            .sheet(item: $editDebt) { debt in
+                NewDebtView(viewModel: viewModel, editingDebt: debt)
+            }
             .sheet(isPresented: $showingAddDebt) {
                 NewDebtView(viewModel: viewModel)
             }
+        }
+    }
+    
+    func deleteDebt(at offsets: IndexSet) {
+        offsets.map { viewModel.debts[$0] }.forEach { debt in
+            viewModel.removeDebt(debt)
         }
     }
 }
