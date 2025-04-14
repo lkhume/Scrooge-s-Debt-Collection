@@ -17,41 +17,58 @@ struct ContentView: View {
     @StateObject private var viewModel = DebtViewModel()
     @State private var showingAddDebt = false
     @State private var editDebt: Debt? = nil
+    @State private var expandedSections: Set<DateComponents> = []
     
     var body : some View {
         NavigationView {
             List {
                 ForEach(viewModel.sortedMonthSections, id: \.0) { section in
-                    Section(header: Text("\(formattedMonth(section.0)) - Total: \(formattedTotal(section.1)) (Unpaid: \(formattedUnpaid(section.1)))")) {
-                        ForEach(section.1) { debt in
-                            VStack(alignment: .leading) {
-                                HStack {
-                                    Text("\(debt.name)").font(.headline)
-                                    Spacer()
-                                    Text("\(debt.amount, specifier: "%.2f")")
-                                        .foregroundColor(debt.isPaid ? .green : .red)
-                                }
-                                Text("Borrower: \(debt.borrower)")
-                                    .font(.subheadline)
-                                if let tag = debt.tag {
-                                    Text("Tag: \(tag)")
-                                        .font(.caption)
-                                }
-                                if let description = debt.description {
-                                    Text(description)
-                                        .font(.caption2)
+                    DisclosureGroup(
+                        isExpanded: Binding(
+                            get: { expandedSections.contains(section.0) },
+                            set: { isExpanded in
+                                if isExpanded {
+                                    expandedSections.insert(section.0)
+                                } else {
+                                    expandedSections.remove(section.0)
                                 }
                             }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                editDebt = debt
+                        ),
+                        content: {
+                            ForEach(section.1) { debt in
+                                VStack(alignment: .leading) {
+                                    HStack {
+                                        Text("\(debt.name)").font(.headline)
+                                        Spacer()
+                                        Text("\(debt.amount, specifier: "%.2f")")
+                                            .foregroundColor(debt.isPaid ? .green : .red)
+                                    }
+                                    Text("Borrower: \(debt.borrower)")
+                                        .font(.subheadline)
+                                    if let tag = debt.tag {
+                                        Text("Tag: \(tag)")
+                                            .font(.caption)
+                                    }
+                                    if let description = debt.description {
+                                        Text(description)
+                                            .font(.caption2)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    editDebt = debt
+                                }
                             }
+                            .onDelete { indexSet in
+                                let debtsToDelete = indexSet.map { section.1[$0] }
+                                debtsToDelete.forEach(viewModel.removeDebt)
+                            }
+                        },
+                        label: {
+                            Text("\(formattedMonth(section.0)) - Total: \(formattedTotal(section.1)) (Unpaid: \(formattedUnpaid(section.1)))")
+                                .font(.headline)
                         }
-                        .onDelete { indexSet in
-                            let debtsToDelete = indexSet.map { section.1[$0] }
-                            debtsToDelete.forEach(viewModel.removeDebt)
-                        }
-                    }
+                    )
                 }
             }
             .navigationBarTitle("Scrooge's Debts")
