@@ -49,6 +49,7 @@ struct BorrowerDebtView: View {
                                         Text("\(debt.amount, specifier: "%.2f")")
                                             .foregroundColor(debt.isPaid ? .green : .red)
                                     }
+                                    Text("\(formatDate(debt.date))").font(.subheadline)
                                     if let tag = debt.tag {
                                         Text("Tag: \(tag)")
                                             .font(.caption)
@@ -61,6 +62,14 @@ struct BorrowerDebtView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     editDebt = debt
+                                }
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        viewModel.togglePaid(for: debt)
+                                    } label: {
+                                        Text(debt.isPaid ? "Unpaid" : "Paid")
+                                    }
+                                    .tint(debt.isPaid ? .orange : .green)
                                 }
                             }
                             .onDelete { indexSet in
@@ -90,6 +99,12 @@ struct BorrowerDebtView: View {
                 NewDebtView(viewModel: viewModel, borrower: borrower)
             }
         }
+    }
+    
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM dd"
+        return formatter.string(from: date)
     }
     
     func formattedMonth(_ components: DateComponents) -> String {

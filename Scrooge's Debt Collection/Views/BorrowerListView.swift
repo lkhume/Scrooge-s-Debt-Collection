@@ -27,7 +27,7 @@ struct BorrowerListView: View {
                     borrowersToDelete.forEach(viewModel.removeBorrower)
                 }
             }
-            .navigationTitle("Scrooge's Debt Collection")
+            .navigationTitle("Borrower List")
             .toolbar {
                 Button(action: {
                     selectedNewDebt = true

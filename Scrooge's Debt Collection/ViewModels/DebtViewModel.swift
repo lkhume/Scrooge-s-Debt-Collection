@@ -9,13 +9,22 @@ import Foundation
 
 
 class DebtViewModel : ObservableObject {
-    @Published var debts : [Debt] = []
-    @Published var borrowers : [Borrower] = []
+    @Published var debts : [Debt] = [] {
+        didSet {
+            saveArray(saveDebtsKey, debts)
+        }
+    }
+    @Published var borrowers : [Borrower] = [] {
+        didSet {
+            saveArray(saveBorrowersKey, borrowers)
+        }
+    }
     
-    private let saveKey = "storedDebts"
-    
+    private let saveDebtsKey = "storedDebts"
+    private let saveBorrowersKey = "storedBorrowers"
+
     init() {
-        loadDebts()
+        loadData()
     }
     
     func addDebt(_ debt : Debt) -> Void  {
@@ -42,16 +51,21 @@ class DebtViewModel : ObservableObject {
         return debts.filter { calendar.isDate($0.date, equalTo: month, toGranularity: .month)}
     }
     
-    func saveDebts() {
-        if let encoded = try? JSONEncoder().encode(debts) {
-            UserDefaults.standard.set(encoded, forKey: saveKey)
+    func saveArray<T: Codable>(_ key: String, _ array: [T]) {
+        if let encoded = try? JSONEncoder().encode(array) {
+            UserDefaults.standard.set(encoded, forKey: key)
         }
     }
     
-    func loadDebts() {
-        if let savedData = UserDefaults.standard.data(forKey: saveKey) {
-            if let decodedDebts = try? JSONDecoder().decode([Debt].self, from: savedData) {
+    func loadData() {
+        if let savedDebts = UserDefaults.standard.data(forKey: saveDebtsKey) {
+            if let decodedDebts = try? JSONDecoder().decode([Debt].self, from: savedDebts) {
                 debts = decodedDebts
+            }
+        }
+        if let savedBorrowers = UserDefaults.standard.data(forKey: saveBorrowersKey) {
+            if let decodedBorrowers = try? JSONDecoder().decode([Borrower].self, from: savedBorrowers) {
+                borrowers = decodedBorrowers
             }
         }
     }
@@ -88,5 +102,10 @@ class DebtViewModel : ObservableObject {
                 let bDate = calendar.date(from: b.key)!
                 return aDate < bDate
             }
+    }
+    
+    func togglePaid(for debt: Debt) -> Void {
+        guard let index = debts.firstIndex(where: { $0.id == debt.id }) else { return }
+        debts[index].isPaid.toggle()
     }
 }
