@@ -50,4 +50,22 @@ class DebtViewModel : ObservableObject {
             }
         }
     }
+    
+    var debtsGroupedByMonth : [DateComponents : [Debt]] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: debts) { debt in
+            calendar.dateComponents([.year, .month], from: debt.date)
+        }
+        return grouped
+    }
+    
+    var sortedMonthSections: [(DateComponents, [Debt])] {
+        debtsGroupedByMonth
+            .sorted {a, b in
+                let calendar = Calendar.current
+                let aDate = calendar.date(from: a.key)!
+                let bDate = calendar.date(from: b.key)!
+                return aDate < bDate
+            }
+    }
 }

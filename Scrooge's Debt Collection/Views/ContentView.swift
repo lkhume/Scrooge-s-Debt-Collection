@@ -21,29 +21,38 @@ struct ContentView: View {
     var body : some View {
         NavigationView {
             List {
-                ForEach(viewModel.debts, id: \.id) { debt in
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("\(debt.name)").font(.headline)
-                            Spacer()
-                            Text("\(debt.amount, specifier: "%.2f")")
-                                .foregroundColor(debt.isPaid ? .green : .red)
+                ForEach(viewModel.sortedMonthSections, id: \.0) { section in
+                    Section(header: Text("\(formattedMonth(section.0)) - Total: \(formattedTotal(section.1)) (Unpaid: \(formattedUnpaid(section.1)))")) {
+                        ForEach(section.1) { debt in
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    Text("\(debt.name)").font(.headline)
+                                    Spacer()
+                                    Text("\(debt.amount, specifier: "%.2f")")
+                                        .foregroundColor(debt.isPaid ? .green : .red)
+                                }
+                                Text("Borrower: \(debt.borrower)")
+                                    .font(.subheadline)
+                                if let tag = debt.tag {
+                                    Text("Tag: \(tag)")
+                                        .font(.caption)
+                                }
+                                if let description = debt.description {
+                                    Text(description)
+                                        .font(.caption2)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                editDebt = debt
+                            }
                         }
-                        Text("Borrower: \(debt.borrower)")
-                            .font(.subheadline)
-                        if let tag = debt.tag {
-                            Text("Tag: \(tag)")
-                                .font(.caption)
+                        .onDelete { indexSet in
+                            let debtsToDelete = indexSet.map { section.1[$0] }
+                            debtsToDelete.forEach(viewModel.removeDebt)
                         }
-                        if let description = debt.description {
-                            Text(description)
-                                .font(.caption2)
-                        }
-                    }.contentShape(Rectangle())
-                        .onTapGesture {
-                            editDebt = debt
-                        }
-                }.onDelete(perform: deleteDebt)
+                    }
+                }
             }
             .navigationBarTitle("Scrooge's Debts")
             .toolbar {
@@ -66,6 +75,30 @@ struct ContentView: View {
         offsets.map { viewModel.debts[$0] }.forEach { debt in
             viewModel.removeDebt(debt)
         }
+    }
+    
+    func formattedMonth(_ components: DateComponents) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "LLLL yyyy"
+        let calendar = Calendar.current
+        if let date = calendar.date(from: components) {
+            return formatter.string(from: date)
+        }
+        return "Unknown"
+    }
+    
+    func formattedTotal(_ debts: [Debt]) -> String {
+        let total = debts.reduce(0) {
+            $0 + $1.amount
+        }
+        return String(format: "$%.2f", total)
+    }
+    
+    func formattedUnpaid(_ debts: [Debt]) -> String {
+        let unpaid = debts.filter { !$0.isPaid }.reduce(0) {
+            $0 + $1.amount
+        }
+        return String(format: "$%.2f", unpaid)
     }
 }
 
