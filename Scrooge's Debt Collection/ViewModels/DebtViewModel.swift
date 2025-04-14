@@ -11,6 +11,12 @@ import Foundation
 class DebtViewModel : ObservableObject {
     @Published var debts : [Debt] = []
     
+    private let saveKey = "storedDebts"
+    
+    init() {
+        loadDebts()
+    }
+    
     func addDebt(_ debt : Debt) -> Void  {
         debts.append(debt)
     }
@@ -29,5 +35,19 @@ class DebtViewModel : ObservableObject {
     func debts(forMonth month: Date) -> [Debt] {
         let calendar = Calendar.current
         return debts.filter { calendar.isDate($0.date, equalTo: month, toGranularity: .month)}
+    }
+    
+    func saveDebts() {
+        if let encoded = try? JSONEncoder().encode(debts) {
+            UserDefaults.standard.set(encoded, forKey: saveKey)
+        }
+    }
+    
+    func loadDebts() {
+        if let savedData = UserDefaults.standard.data(forKey: saveKey) {
+            if let decodedDebts = try? JSONDecoder().decode([Debt].self, from: savedData) {
+                debts = decodedDebts
+            }
+        }
     }
 }

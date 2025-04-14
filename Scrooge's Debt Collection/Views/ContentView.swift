@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = DebtViewModel()
+    @State private var showingAddDebt = false
     
     var body : some View {
         NavigationView {
@@ -37,10 +38,13 @@ struct ContentView: View {
             .navigationBarTitle("Scrooge's Debts")
             .toolbar {
                 Button(action: {
-                    // TODO: add modal to add debts
+                    showingAddDebt = true
                 }) {
                     Image(systemName: "plus")
                 }
+            }
+            .sheet(isPresented: $showingAddDebt) {
+                NewDebtView(viewModel: viewModel)
             }
         }
     }
