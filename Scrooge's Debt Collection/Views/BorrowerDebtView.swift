@@ -13,16 +13,22 @@ extension Debt : Equatable {
     }
 }
 
-struct ContentView: View {
-    @StateObject private var viewModel = DebtViewModel()
+struct BorrowerDebtView: View {
+    @ObservedObject private var viewModel : DebtViewModel
     @State private var showingAddDebt = false
     @State private var editDebt: Debt? = nil
     @State private var expandedSections: Set<DateComponents> = []
+    @State private var borrower: Borrower
+    
+    internal init(viewModel: DebtViewModel, borrower: Borrower) {
+        self.viewModel = viewModel
+        self.borrower = borrower
+    }
     
     var body : some View {
         NavigationView {
             List {
-                ForEach(viewModel.sortedMonthSections, id: \.0) { section in
+                ForEach(viewModel.sortedMonthSections(for: borrower), id: \.0) { section in
                     DisclosureGroup(
                         isExpanded: Binding(
                             get: { expandedSections.contains(section.0) },
@@ -43,8 +49,6 @@ struct ContentView: View {
                                         Text("\(debt.amount, specifier: "%.2f")")
                                             .foregroundColor(debt.isPaid ? .green : .red)
                                     }
-                                    Text("Borrower: \(debt.borrower)")
-                                        .font(.subheadline)
                                     if let tag = debt.tag {
                                         Text("Tag: \(tag)")
                                             .font(.caption)
@@ -71,7 +75,7 @@ struct ContentView: View {
                     )
                 }
             }
-            .navigationBarTitle("Scrooge's Debts")
+            .navigationBarTitle("\(borrower.name)'s Debts")
             .toolbar {
                 Button(action: {
                     showingAddDebt = true
@@ -80,17 +84,11 @@ struct ContentView: View {
                 }
             }
             .sheet(item: $editDebt) { debt in
-                NewDebtView(viewModel: viewModel, editingDebt: debt)
+                NewDebtView(viewModel: viewModel, editingDebt: debt, borrower: borrower)
             }
             .sheet(isPresented: $showingAddDebt) {
-                NewDebtView(viewModel: viewModel)
+                NewDebtView(viewModel: viewModel, borrower: borrower)
             }
-        }
-    }
-    
-    func deleteDebt(at offsets: IndexSet) {
-        offsets.map { viewModel.debts[$0] }.forEach { debt in
-            viewModel.removeDebt(debt)
         }
     }
     
@@ -117,8 +115,4 @@ struct ContentView: View {
         }
         return String(format: "$%.2f", unpaid)
     }
-}
-
-#Preview {
-    ContentView()
 }

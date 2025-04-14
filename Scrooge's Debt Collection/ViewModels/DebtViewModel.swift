@@ -10,6 +10,7 @@ import Foundation
 
 class DebtViewModel : ObservableObject {
     @Published var debts : [Debt] = []
+    @Published var borrowers : [Borrower] = []
     
     private let saveKey = "storedDebts"
     
@@ -23,6 +24,10 @@ class DebtViewModel : ObservableObject {
     
     func removeDebt(_ debt : Debt) {
         debts.removeAll(where: {$0.id == debt.id})
+    }
+    
+    func removeBorrower(_ borrower : Borrower) {
+        borrowers.removeAll(where: {$0.id == borrower.id})
     }
     
     func setPaid(_ debt : Debt) {
@@ -51,16 +56,32 @@ class DebtViewModel : ObservableObject {
         }
     }
     
-    var debtsGroupedByMonth : [DateComponents : [Debt]] {
+    func totalOwed(by borrower: Borrower) -> Double {
+        debts.filter {
+            !$0.isPaid && $0.borrower.id == borrower.id
+        }
+        .reduce(0) {
+            $0 + $1.amount
+        }
+    }
+    
+    func debts(for borrower: Borrower) -> [Debt] {
+        return debts.filter {
+            $0.borrower.id == borrower.id
+        }
+    }
+    
+    func debtsGroupedByMonth(for borrower: Borrower) -> [DateComponents : [Debt]] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: debts) { debt in
+        let filtered = debts(for: borrower)
+        let grouped = Dictionary(grouping: filtered) { debt in
             calendar.dateComponents([.year, .month], from: debt.date)
         }
         return grouped
     }
     
-    var sortedMonthSections: [(DateComponents, [Debt])] {
-        debtsGroupedByMonth
+    func sortedMonthSections(for borrower: Borrower) -> [(DateComponents, [Debt])] {
+        debtsGroupedByMonth(for: borrower)
             .sorted {a, b in
                 let calendar = Calendar.current
                 let aDate = calendar.date(from: a.key)!

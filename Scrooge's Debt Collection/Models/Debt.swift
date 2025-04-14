@@ -9,7 +9,7 @@ import Foundation
 struct Debt : Identifiable, Codable {
     let id : UUID
     var name : String
-    var borrower : String
+    var borrower : Borrower
     var amount : Double
     var tag : String?
     var description : String?
@@ -18,7 +18,7 @@ struct Debt : Identifiable, Codable {
     
     init(id: UUID = UUID(),
          name: String,
-         borrower: String,
+         borrower: Borrower,
          amount: Double,
          tag: String? = nil,
          description: String? = nil,

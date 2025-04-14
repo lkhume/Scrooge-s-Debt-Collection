@@ -11,7 +11,7 @@ import SwiftUI
 struct Scrooge_s_Debt_CollectionApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            BorrowerListView()
         }
     }
 }
